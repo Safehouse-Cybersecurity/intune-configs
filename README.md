@@ -1,6 +1,13 @@
-# Safehouse Cybersecurity / it2grow Intune Configs
+<p align="center">
+  <img src="https://it2grow.nl/wp-content/uploads/2024/06/it2grow_boom_donker_grijs_transparant-300x300-1.png" alt="it2grow logo" width="150">
+</p>
 
-Centralized configuration files and remediation scripts for Microsoft Intune deployments, maintained by it2grow.
+<h1 align="center">Intune Configs</h1>
+
+<p align="center">
+  Centralized configuration files and remediation scripts for Microsoft Intune deployments.<br>
+  Maintained by <a href="https://it2grow.nl">it2grow</a>, a <strong>Safehouse Cybersecurity</strong> company.
+</p>
 
 ---
 
