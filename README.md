@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://it2grow.nl/wp-content/uploads/2024/06/it2grow_boom_donker_grijs_transparant-300x300-1.png" alt="it2grow logo" width="150">
+  <img src="https://it2grow.nl/wp-content/uploads/2025/10/It2grow-x-Safehouse-logo-1000x144-1.png" alt="it2grow by Safehouse logo" width="400">
 </p>
 
 <h1 align="center">Intune Configs</h1>
