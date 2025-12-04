@@ -1,6 +1,6 @@
 [
     {
-        "display_name": "it2cloud - Remote Access VPN 02",
+        "display_name": "it2grow - Remote Access VPN 02",
         "gateway": "ra-vpn02.it2grow.nl",
         "user_portal_port": 443,
         "otp": false,
