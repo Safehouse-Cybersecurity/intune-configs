@@ -2,7 +2,7 @@
 # Returns exit code 0 if compliant, exit code 1 if remediation needed
 
 $WallpaperPath = "C:\Windows\Web\Wallpaper\wallpaper.png"
-$ExpectedHash = "130DEFF3C1AD30AF11CF7BA626AAF561A5A0A5E83F3DFA9E863BE1DED92871F4"
+$ExpectedHash = "C309CB12E617275468940793F402FB23469A11956A4EFB8BC28BF38D94A5301D"
 
 if (Test-Path $WallpaperPath) {
     $CurrentHash = (Get-FileHash -Path $WallpaperPath -Algorithm SHA256).Hash
