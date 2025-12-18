@@ -2,7 +2,7 @@
 # Returns exit code 0 if compliant, exit code 1 if remediation needed
 
 $LockscreenPath = "C:\Windows\Web\Screen\lockscreen.png"
-$ExpectedHash = "FADE173C33F09A6E3AF3AD66E75275B3495E26149B4D38240BF96B604D3B1B2B"
+$ExpectedHash = "71A16E44849AC3912656C2AC5B288FA5DFAA206F36D5FB94429ED8DAC4880D11"
 
 if (Test-Path $LockscreenPath) {
     $CurrentHash = (Get-FileHash -Path $LockscreenPath -Algorithm SHA256).Hash
