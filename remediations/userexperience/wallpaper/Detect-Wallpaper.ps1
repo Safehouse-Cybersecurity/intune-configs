@@ -1,47 +1,65 @@
-# Check if corporate wallpaper is set and Spotlight is disabled
+# Check if corporate wallpaper is set
 
 try {
     $WallpaperPath = "C:\ProgramData\it2grow\wallpaper.png"
     $ExpectedHash = "594133EEFEB66FAC22125388EE6B9888E6F8DFAA362595FDA35BAD1A7C9B4FA2"
     
-    # Get current user
-    $LoggedInUser = (Get-WmiObject -Class Win32_ComputerSystem | Select-Object -ExpandProperty UserName)
-    if (!$LoggedInUser) {
-        Write-Output "No user logged in"
+    # Find logged-in user's SID via explorer.exe process
+    $LoggedInUserSID = $null
+    $ExplorerProcess = Get-WmiObject -Class Win32_Process -Filter "Name='explorer.exe'"
+    
+    if ($ExplorerProcess) {
+        $ExplorerOwner = $ExplorerProcess.GetOwner()
+        $Username = $ExplorerOwner.User
+        
+        # Load HKU
+        if (!(Test-Path "HKU:\")) {
+            New-PSDrive -Name HKU -PSProvider Registry -Root HKEY_USERS -ErrorAction SilentlyContinue | Out-Null
+        }
+        
+        # Find SID
+        Get-ChildItem "HKU:\" | Where-Object { $_.Name -match 'S-1-5-21' } | ForEach-Object {
+            $SID = $_.PSChildName
+            $ProfilePath = "HKU:\$SID\Volatile Environment"
+            
+            if (Test-Path $ProfilePath) {
+                $ProfileUser = (Get-ItemProperty -Path $ProfilePath -ErrorAction SilentlyContinue).USERNAME
+                if ($ProfileUser -eq $Username) {
+                    $LoggedInUserSID = $SID
+                }
+            }
+        }
+    }
+    
+    if (!$LoggedInUserSID) {
+        Write-Output "No logged-in user found"
         exit 1
     }
     
-    $Username = $LoggedInUser.Split('\')[1]
-    $UserSID = (New-Object System.Security.Principal.NTAccount($Username)).Translate([System.Security.Principal.SecurityIdentifier]).Value
-    
-    # Load HKU if needed
-    if (!(Test-Path "HKU:\")) {
-        New-PSDrive -Name HKU -PSProvider Registry -Root HKEY_USERS -ErrorAction SilentlyContinue | Out-Null
-    }
-    
-    # Check if wallpaper file exists
+    # Check file exists
     if (!(Test-Path $WallpaperPath)) {
         Write-Output "Wallpaper file missing"
         exit 1
     }
     
-    # Verify file hash
+    # Check hash
     $CurrentHash = (Get-FileHash -Path $WallpaperPath -Algorithm SHA256).Hash
     if ($CurrentHash -ne $ExpectedHash) {
-        Write-Output "Wallpaper hash mismatch"
+        Write-Output "Hash mismatch"
         exit 1
     }
     
     # Check wallpaper setting
-    $DesktopPath = "HKU:\$UserSID\Control Panel\Desktop"
+    $DesktopPath = "HKU:\$LoggedInUserSID\Control Panel\Desktop"
     $CurrentWallpaper = (Get-ItemProperty -Path $DesktopPath -ErrorAction SilentlyContinue).Wallpaper
+    
     if ($CurrentWallpaper -ne $WallpaperPath) {
-        Write-Output "Wallpaper not set correctly: $CurrentWallpaper"
+        Write-Output "Wallpaper not set: $CurrentWallpaper"
         exit 1
     }
     
     # Check Spotlight
-    $CDMPath = "HKU:\$UserSID\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+    $CDMPath = "HKU:\$LoggedInUserSID\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
     $CDM = Get-ItemProperty -Path $CDMPath -ErrorAction SilentlyContinue
     
     if ($CDM.RotatingLockScreenEnabled -ne 0 -or $CDM.RotatingLockScreenOverlayEnabled -ne 0) {
@@ -49,10 +67,10 @@ try {
         exit 1
     }
     
-    Write-Output "Wallpaper compliant"
+    Write-Output "Compliant"
     exit 0
     
 } catch {
-    Write-Output "ERROR in detection: $_"
+    Write-Output "ERROR: $_"
     exit 1
 }
