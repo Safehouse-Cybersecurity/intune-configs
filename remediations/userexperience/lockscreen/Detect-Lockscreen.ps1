@@ -1,20 +1,34 @@
-# Check if corporate lockscreen is set
+# Set corporate lockscreen
+# Runs as SYSTEM
 
-$LockscreenPath = "C:\ProgramData\it2grow\lockscreen.png"
-$ExpectedHash = "594133EEFEB66FAC22125388EE6B9888E6F8DFAA362595FDA35BAD1A7C9B4FA2"
-
-# Check if lockscreen file exists
-if (!(Test-Path $LockscreenPath)) {
-    Write-Output "Lockscreen file missing"
+try {
+    # Create company folder
+    $CompanyFolder = "C:\ProgramData\it2grow"
+    if (!(Test-Path $CompanyFolder)) {
+        New-Item -Path $CompanyFolder -ItemType Directory -Force | Out-Null
+        Write-Output "Created folder: $CompanyFolder"
+    }
+    
+    # Download corporate lockscreen
+    $LockscreenUrl = "https://stit2growintuneweu001.blob.core.windows.net/intune-assets/lockscreen.png"
+    $LocalLockscreen = "C:\ProgramData\it2grow\lockscreen.png"
+    
+    Invoke-WebRequest -Uri $LockscreenUrl -OutFile $LocalLockscreen -UseBasicParsing -ErrorAction Stop
+    Write-Output "Lockscreen downloaded: $LocalLockscreen"
+    
+    # Set lockscreen via HKLM (machine-level, works for all users)
+    $RegPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization"
+    if (!(Test-Path $RegPath)) {
+        New-Item -Path $RegPath -Force | Out-Null
+    }
+    
+    Set-ItemProperty -Path $RegPath -Name "LockScreenImage" -Value $LocalLockscreen -Force
+    
+    Write-Output "Lockscreen remediation completed successfully"
+    exit 0
+    
+} catch {
+    Write-Output "ERROR: $_"
+    Write-Output "Stack trace: $($_.ScriptStackTrace)"
     exit 1
 }
-
-# Verify file hash
-$CurrentHash = (Get-FileHash -Path $LockscreenPath -Algorithm SHA256).Hash
-if ($CurrentHash -ne $ExpectedHash) {
-    Write-Output "Lockscreen file hash mismatch - needs update. Current: $CurrentHash"
-    exit 1
-}
-
-Write-Output "Lockscreen compliant"
-exit 0
