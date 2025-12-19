@@ -1,19 +1,34 @@
-# Detection script for corporate wallpaper
-# Returns exit code 0 if compliant, exit code 1 if remediation needed
+# Check if corporate wallpaper is set and Spotlight is disabled
 
-$WallpaperPath = "C:\Windows\Web\Wallpaper\wallpaper.png"
+$WallpaperPath = "C:\ProgramData\it2grow\wallpaper.png"
 $ExpectedHash = "594133EEFEB66FAC22125388EE6B9888E6F8DFAA362595FDA35BAD1A7C9B4FA2"
 
-if (Test-Path $WallpaperPath) {
-    $CurrentHash = (Get-FileHash -Path $WallpaperPath -Algorithm SHA256).Hash
-    if ($CurrentHash -eq $ExpectedHash) {
-        Write-Output "Wallpaper is current"
-        exit 0
-    } else {
-        Write-Output "Wallpaper outdated"
-        exit 1
-    }
-} else {
-    Write-Output "Wallpaper not found"
+# Check if wallpaper file exists
+if (!(Test-Path $WallpaperPath)) {
+    Write-Output "Wallpaper file missing"
     exit 1
 }
+
+# Check current wallpaper setting
+$CurrentWallpaper = (Get-ItemProperty -Path "HKCU:\Control Panel\Desktop" -ErrorAction SilentlyContinue).Wallpaper
+if ($CurrentWallpaper -ne $WallpaperPath) {
+    Write-Output "Wallpaper not set correctly: $CurrentWallpaper"
+    exit 1
+}
+
+# Check if Spotlight is disabled
+$CDM = Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -ErrorAction SilentlyContinue
+if ($CDM.RotatingLockScreenEnabled -ne 0 -or $CDM.RotatingLockScreenOverlayEnabled -ne 0) {
+    Write-Output "Spotlight still enabled"
+    exit 1
+}
+
+# Verify file hash
+$CurrentHash = (Get-FileHash -Path $WallpaperPath -Algorithm SHA256).Hash
+if ($CurrentHash -ne $ExpectedHash) {
+    Write-Output "Wallpaper file hash mismatch - needs update"
+    exit 1
+}
+
+Write-Output "Wallpaper compliant"
+exit 0
