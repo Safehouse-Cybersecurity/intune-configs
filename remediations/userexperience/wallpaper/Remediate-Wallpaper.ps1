@@ -1,56 +1,51 @@
 # Set corporate wallpaper and disable Spotlight
-# Runs as SYSTEM - Azure AD compatible
+# Azure AD compatible
 
 try {
-    # Method 1: Get currently logged-in user's SID from registry
-    $LoggedInUserSID = $null
+    # Determine if running as SYSTEM
+    $CurrentSID = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $RunningAsSystem = $CurrentSID -eq 'S-1-5-18'
     
-    # Find the SID of the user who owns explorer.exe process (= logged-in user)
-    $ExplorerProcess = Get-WmiObject -Class Win32_Process -Filter "Name='explorer.exe'"
-    if ($ExplorerProcess) {
-        $ExplorerOwner = $ExplorerProcess.GetOwner()
-        $Username = $ExplorerOwner.User
-        $Domain = $ExplorerOwner.Domain
+    if ($RunningAsSystem) {
+        Write-Output "Running as SYSTEM"
         
-        Write-Output "Found user: $Domain\$Username"
-        
-        # Load HKU registry
+        # Load HKU
         if (!(Test-Path "HKU:\")) {
             New-PSDrive -Name HKU -PSProvider Registry -Root HKEY_USERS -ErrorAction SilentlyContinue | Out-Null
         }
         
-        # Find user's SID by enumerating HKU and matching username
-        Get-ChildItem "HKU:\" | Where-Object { $_.Name -match 'S-1-5-21' } | ForEach-Object {
-            $SID = $_.PSChildName
-            $ProfilePath = "HKU:\$SID\Volatile Environment"
-            
-            if (Test-Path $ProfilePath) {
-                $ProfileUser = (Get-ItemProperty -Path $ProfilePath -ErrorAction SilentlyContinue).USERNAME
-                if ($ProfileUser -eq $Username) {
-                    $LoggedInUserSID = $SID
-                    Write-Output "Matched SID: $SID for user $Username"
-                }
-            }
+        # Find user SID - look for both S-1-5-21 (domain) and S-1-12-1 (Azure AD)
+        $UserSID = Get-ChildItem "HKU:\" -ErrorAction SilentlyContinue | 
+            Where-Object { 
+                ($_.Name -match 'S-1-5-21' -or $_.Name -match 'S-1-12-1') -and 
+                (Test-Path "HKU:\$($_.PSChildName)\Volatile Environment") 
+            } |
+            Sort-Object -Property @{Expression={$_.LastWriteTime}; Descending=$true} |
+            Select-Object -First 1 -ExpandProperty PSChildName
+        
+        if (!$UserSID) {
+            Write-Output "ERROR: No user SID found"
+            exit 1
         }
+        
+        Write-Output "Target SID: $UserSID"
+        $DesktopPath = "HKU:\$UserSID\Control Panel\Desktop"
+        $CDMPath = "HKU:\$UserSID\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+        
+    } else {
+        Write-Output "Running as current user: $CurrentSID"
+        $DesktopPath = "HKCU:\Control Panel\Desktop"
+        $CDMPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
     }
     
-    if (!$LoggedInUserSID) {
-        Write-Output "ERROR: Could not find logged-in user's SID"
-        exit 1
-    }
-    
-    Write-Output "Using SID: $LoggedInUserSID"
-    
-    # Create company folder
+    # Create folder
     $CompanyFolder = "C:\ProgramData\it2grow"
     if (!(Test-Path $CompanyFolder)) {
         New-Item -Path $CompanyFolder -ItemType Directory -Force | Out-Null
-        Write-Output "Created folder: $CompanyFolder"
+        Write-Output "Created: $CompanyFolder"
     }
     
-    # Disable Windows Spotlight
-    $CDMPath = "HKU:\$LoggedInUserSID\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
-    
+    # Disable Spotlight
     $SpotlightSettings = @{
         "RotatingLockScreenEnabled" = 0
         "RotatingLockScreenOverlayEnabled" = 0
@@ -67,7 +62,6 @@ try {
     foreach ($Setting in $SpotlightSettings.GetEnumerator()) {
         Set-ItemProperty -Path $CDMPath -Name $Setting.Key -Value $Setting.Value -Type DWord -Force -ErrorAction SilentlyContinue
     }
-    
     Write-Output "Spotlight disabled"
     
     # Download wallpaper
@@ -78,21 +72,18 @@ try {
     Write-Output "Downloaded: $LocalWallpaper"
     
     # Set wallpaper
-    $DesktopPath = "HKU:\$LoggedInUserSID\Control Panel\Desktop"
     Set-ItemProperty -Path $DesktopPath -Name "Wallpaper" -Value $LocalWallpaper -Force
     Set-ItemProperty -Path $DesktopPath -Name "WallpaperStyle" -Value "10" -Type String -Force
     Set-ItemProperty -Path $DesktopPath -Name "TileWallpaper" -Value "0" -Type String -Force
-    
     Write-Output "Wallpaper configured"
     
     # Kill Explorer to force refresh
     Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
     
-    Write-Output "SUCCESS: Wallpaper remediation complete"
+    Write-Output "SUCCESS"
     exit 0
     
 } catch {
     Write-Output "ERROR: $_"
-    Write-Output "Stack: $($_.ScriptStackTrace)"
     exit 1
 }
