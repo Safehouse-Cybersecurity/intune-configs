@@ -2,7 +2,7 @@
 
 try {
     $LockscreenPath = "C:\ProgramData\it2grow\lockscreen.png"
-    $ExpectedHash = "CBDFAF6F37E69BC4A80F31626827BD6AA7220EC531919BCCB1CB112E6EE5985F"
+    $ExpectedHash = "21A26525B95C47DCE3D75FB32964D36DC97FCF5B53AF61E92D674457B862B767"
     
     if (!(Test-Path $LockscreenPath)) {
         Write-Output "File missing"
