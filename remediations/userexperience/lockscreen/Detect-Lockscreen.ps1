@@ -1,19 +1,20 @@
-# Detection script for corporate lock screen
-# Returns exit code 0 if compliant, exit code 1 if remediation needed
+# Check if corporate lockscreen is set
 
-$LockscreenPath = "C:\Windows\Web\Screen\lockscreen.png"
-$ExpectedHash = "71A16E44849AC3912656C2AC5B288FA5DFAA206F36D5FB94429ED8DAC4880D11"
+$LockscreenPath = "C:\ProgramData\it2grow\lockscreen.png"
+$ExpectedHash = "594133EEFEB66FAC22125388EE6B9888E6F8DFAA362595FDA35BAD1A7C9B4FA2"
 
-if (Test-Path $LockscreenPath) {
-    $CurrentHash = (Get-FileHash -Path $LockscreenPath -Algorithm SHA256).Hash
-    if ($CurrentHash -eq $ExpectedHash) {
-        Write-Output "Lockscreen is current"
-        exit 0
-    } else {
-        Write-Output "Lockscreen outdated"
-        exit 1
-    }
-} else {
-    Write-Output "Lockscreen not found"
+# Check if lockscreen file exists
+if (!(Test-Path $LockscreenPath)) {
+    Write-Output "Lockscreen file missing"
     exit 1
 }
+
+# Verify file hash
+$CurrentHash = (Get-FileHash -Path $LockscreenPath -Algorithm SHA256).Hash
+if ($CurrentHash -ne $ExpectedHash) {
+    Write-Output "Lockscreen file hash mismatch - needs update. Current: $CurrentHash"
+    exit 1
+}
+
+Write-Output "Lockscreen compliant"
+exit 0
