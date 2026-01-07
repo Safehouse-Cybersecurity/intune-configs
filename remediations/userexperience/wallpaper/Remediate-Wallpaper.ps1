@@ -73,7 +73,7 @@ try {
     
     # Set wallpaper
     Set-ItemProperty -Path $DesktopPath -Name "Wallpaper" -Value $LocalWallpaper -Force
-    Set-ItemProperty -Path $DesktopPath -Name "WallpaperStyle" -Value "10" -Type String -Force
+    Set-ItemProperty -Path $DesktopPath -Name "WallpaperStyle" -Value "6" -Type String -Force
     Set-ItemProperty -Path $DesktopPath -Name "TileWallpaper" -Value "0" -Type String -Force
     Write-Output "Wallpaper configured"
     
