@@ -1,7 +1,7 @@
 [
     {
         "display_name": "it2cloud_Remote_Access_VPN",
-        "gateway": "ra-vpn02.it2grow.nl",
+        "gateway": "ra-vpn.it2grow.nl",
         "user_portal_port": 443,
         "otp": false,
         "auto_connect_host": "",
