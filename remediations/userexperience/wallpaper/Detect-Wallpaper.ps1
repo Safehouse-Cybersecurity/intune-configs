@@ -3,7 +3,7 @@
 
 try {
     $WallpaperPath = "C:\ProgramData\it2grow\wallpaper.png"
-    $ExpectedHash = "594133EEFEB66FAC22125388EE6B9888E6F8DFAA362595FDA35BAD1A7C9B4FA2"
+    $ExpectedHash = "A8AF5BD0A9358108A2535445BFA0E20E69AA5BB8F4039EFBD5110FC72A640B84"
     
     # Determine if running as SYSTEM
     $CurrentSID = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
