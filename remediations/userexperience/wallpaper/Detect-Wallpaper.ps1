@@ -61,9 +61,9 @@ try {
         exit 1
     }
     
-    # NEW: Check WallpaperStyle is set to Fit (6)
-    if ($CurrentStyle -ne "6") {
-        Write-Output "WallpaperStyle not set to Fit (6), currently: $CurrentStyle"
+    # NEW: Check WallpaperStyle is set to Stretch (2)
+    if ($CurrentStyle -ne "2") {
+        Write-Output "WallpaperStyle not set to Strech (2), currently: $CurrentStyle"
         exit 1
     }
     
